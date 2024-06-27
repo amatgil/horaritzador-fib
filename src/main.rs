@@ -110,12 +110,12 @@ fn parse_sessio(input: &str) -> IResult<&str, Sessio> {
                         start: start as usize,
                         finish: end as usize }))
 }
-fn parse_grup(input: &str) -> IResult<&str, Grup> {
+fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>> {
     let newl_tab = tag("\n\t");
     let (input, _) = newl_tab(input)?;
 
     // Numero
-    let (input, num) = complete::u32(input)?;
+    let (input, nums) = separated_list0(tag(","), complete::u32)(input)?;
     let (input, _) = newl_tab(input)?;
 
     // Llengua
@@ -142,11 +142,13 @@ fn parse_grup(input: &str) -> IResult<&str, Grup> {
     dbg!(n_sessions, &sessions);
 
 
-    Ok((input, Grup {
-        num: num as usize,
+    let grups: Vec<_> = nums.into_iter().map(|g| Grup {
+        num: g as usize,
         llengua: llengua.try_into().unwrap(),
-        sessions
-    }))
+        sessions: sessions.clone(),
+    }).collect();
+
+    Ok((input, grups))
 }
 
 fn parse_assig(input: &str) -> IResult<&str, Assignatura> {
@@ -158,7 +160,7 @@ fn parse_assig(input: &str) -> IResult<&str, Assignatura> {
 
     let final_assig = Assignatura {
         nom: assig_name.into(),
-        grups,
+        grups: grups.into_iter().flatten().collect(),
     };
 
     Ok((dbg!(input), final_assig))
