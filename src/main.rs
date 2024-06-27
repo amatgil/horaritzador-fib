@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::HashMap};
+use std::{cmp::Ordering, collections::{HashMap, HashSet}};
 
 mod parsing;
 use parsing::parse_raw_horari;
@@ -101,17 +101,27 @@ impl Ord for Horari {
         if       self.comença_a_les_vuit() && !other.comença_a_les_vuit() { Ordering::Less }
         else if !self.comença_a_les_vuit() &&  other.comença_a_les_vuit() { Ordering::Greater }
         else { // Cap dels dos comença a les 8
-            todo!()
+            Ordering::Equal // TODO: Add more ordering criteria
         }
     }
 }
 
-
 fn main() {
+    use itertools::Itertools;
+
     let mut assignatures: Vec<Assignatura> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
 
-    let mut h1 = Horari::default();
-    let mut h2 = Horari::default();
+    let noms: Vec<_> = assignatures.iter().map(|a| a.nom.clone()).collect();
+    let grups: Vec<_> = assignatures.iter().map(|a| a.grups.clone()).flatten().collect();
+
+    let mut x = 0;
+    for gs in assignatures.into_iter().map(|g| g.grups).multi_cartesian_product() {
+
+        //dbg!(gs.len());
+        //dbg!(x);
+        x += 1;
+    }
+    dbg!(x);
     
 }
 
