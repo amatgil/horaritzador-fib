@@ -1,5 +1,7 @@
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
+mod parsing;
+use parsing::parse_raw_horari;
 
 const RAW_HORARI: &str = include_str!("../input_data.txt");
 
@@ -61,113 +63,55 @@ struct Grup {
     sessions: Vec<Sessio>,
 }
 
-struct Day([Option<Assignatura>; 6]);
+#[derive(Debug, Clone)]
+struct AssigDisplay {
+    nom: String,
+    grup: usize,
+    llengua: Llengua,
+}
 
+#[derive(Debug, Clone, Default)]
 struct Horari([Day; 5]);
+#[derive(Debug, Clone, Default)]
+struct Day([Option<AssigDisplay>; 6]);
+
+impl Horari {
+    fn add_assig(&mut self, sess: &Sessio, assig: &AssigDisplay) {
+        let i = sess.dia as usize;
+        for h in sess.start..sess.finish {
+            self.0[i].0[h - 8] = Some(assig.clone());
+        }
+    }
+    fn comença_a_les_vuit(&self) -> bool {
+        self.0.iter().any(|d| d.0[0].is_some())
+    }
+}
+
+impl PartialOrd for Horari {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
+}
+impl Eq for Horari  {}
+impl PartialEq for Horari {
+    fn eq(&self, other: &Self) -> bool { self.cmp(other) == Ordering::Equal }
+}
+
+
+impl Ord for Horari {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if       self.comença_a_les_vuit() && !other.comença_a_les_vuit() { Ordering::Less }
+        else if !self.comença_a_les_vuit() &&  other.comença_a_les_vuit() { Ordering::Greater }
+        else { // Cap dels dos comença a les 8
+            todo!()
+        }
+    }
+}
+
 
 fn main() {
     let mut assignatures: Vec<Assignatura> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
 
-    dbg!(assignatures);
+    let mut h1 = Horari::default();
+    let mut h2 = Horari::default();
+    
 }
 
-use nom::{
-    IResult,
-    bytes::complete::{
-        take_till1,
-        tag,
-    },
-    character::complete::{
-        self, digit0, space0
-    },
-    branch::alt,
-    multi::{
-        separated_list0,
-        many1,
-    },
-
-};
-
-fn parse_sessio(input: &str) -> IResult<&str, Sessio> {
-    let (input, _) = tag("\t")(input)?;
-
-    let (input, dia) = alt((
-        tag("dilluns"),
-        tag("dimarts"),
-        tag("dimecres"),
-        tag("dijous"),
-        tag("divendres"),
-    ))(input)?;
-
-    dbg!(input);
-    let (input, _) = space0(input)?;
-    let (input, start) = complete::u32(input)?;
-    let (input, _) = space0(input)?;
-    let (input, end) = complete::u32(input)?;
-    let (input, _) = tag("\n")(input)?;
-
-    Ok((input, Sessio { dia: dia.try_into().unwrap(),
-                        start: start as usize,
-                        finish: end as usize }))
-}
-fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>> {
-    let newl_tab = tag("\n\t");
-    let (input, _) = newl_tab(input)?;
-
-    // Numero
-    let (input, nums) = separated_list0(tag(","), complete::u32)(input)?;
-    let (input, _) = newl_tab(input)?;
-
-    // Llengua
-
-    let (input, llengua) = alt((
-        tag("catala"),
-        tag("castella"),
-        tag("angles"),
-    ))(input)?;
-    let (input, _) = newl_tab(input)?;
-
-    // Dies
-    let (input, n_sessions) = complete::u32(input)?;
-    let (input, _) = tag("\n")(input)?;
-
-    let mut sessions = Vec::new();
-    dbg!(input);
-    let mut input = input;
-    for _ in 0..n_sessions {
-        let (newinput, sessio) = parse_sessio(input)?;
-        sessions.push(sessio);
-        input = newinput;
-    }
-    dbg!(n_sessions, &sessions);
-
-
-    let grups: Vec<_> = nums.into_iter().map(|g| Grup {
-        num: g as usize,
-        llengua: llengua.try_into().unwrap(),
-        sessions: sessions.clone(),
-    }).collect();
-
-    Ok((input, grups))
-}
-
-fn parse_assig(input: &str) -> IResult<&str, Assignatura> {
-    let (input, assig_name) = take_till1(|c| c == '\n')(input)?;
-    let (input, _) = tag("\n")(input)?;
-    let (input, _num_grups) = complete::u32(input)?;
-
-    let (input, grups) = many1(parse_grup)(input)?;
-
-    let final_assig = Assignatura {
-        nom: assig_name.into(),
-        grups: grups.into_iter().flatten().collect(),
-    };
-
-    Ok((dbg!(input), final_assig))
-}
-
-fn parse_raw_horari(input: &str) -> IResult<&str, Vec<Assignatura>> {
-    let (input, output) = separated_list0(tag("\n"), parse_assig)(input)?;
-
-    Ok((input, output))
-}
