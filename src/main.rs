@@ -124,18 +124,16 @@ impl Horari {
     fn comença_a_les_vuit(&self) -> bool {
         self.0.iter().any(|d| d.0[0].is_some())
     }
-    fn generate_from_groups(assignatures: &[AssignaturaParse], grup: &GrupParse) -> Option<Self> {
-        let mut h = Self::default();
-        for assig in assignatures {
-            if let Some(_) = assig.grups.iter().position(|g| g == grup) {
-                let assig_display = AssigDisplay {
-                    nom: assig.nom.clone(),
-                    grup: grup.num,
-                    llengua: grup.llengua,
-                };
-                for sessio in &grup.sessions {
-                    h.add_assig(&sessio, &assig_display).ok()?
-                }
+    fn generate_from_groups(map: HashMap<GrupParse, (String, Vec<Sessio>)>) -> Option<Self> {
+        let mut h = Horari::default();
+        for (grup, (nom, sessions)) in map.into_iter() {
+            let display = AssigDisplay {
+                nom,
+                grup: grup.num,
+                llengua: grup.llengua,
+            };
+            for sessio in sessions {
+                h.add_assig(&sessio, &display).ok()?;
             }
         }
         Some(h)
@@ -169,36 +167,28 @@ fn main() {
     //let noms: Vec<_> = assignatures.iter().map(|a| a.nom.clone()).collect();
     let grups: Vec<_> = assignatures.iter().map(|a| a.grups.clone()).flatten().collect();
 
-    let mut sessions_per_grup: HashMap<GrupParse, Vec<Sessio>> = HashMap::new();
+    let mut sessions_per_grup: HashMap<GrupParse, (String, Vec<Sessio>)> = HashMap::new();
 
     for grup in &grups {
-        let sessions: Vec<Sessio> = assignatures
+        let sessions = assignatures
             .iter()
             .filter(|a| a.grups.contains(&grup))
-            .map(|a| a.grups[a.grups.iter().position(|g| g == grup).unwrap()].sessions.clone())
-            .flatten()
+            .map(|a| (a.nom.clone(), a.grups[a.grups.iter().position(|g| g == grup).unwrap()].sessions.clone()))
             .collect::<Vec<_>>();
 
-        sessions_per_grup.insert(grup.clone(), sessions);
+        let nom = sessions[0].0.clone();
+        let actual_sessions = sessions.into_iter().map(|(_, x)| x).flatten().collect();
+        sessions_per_grup.insert(grup.clone(), (nom, actual_sessions));
     }
 
     
-    //let mut possibilities: Vec<(String, GrupParse)> = vec![];
-    //for assig in assignatures {
-    //    for grup in assig.grups {
-    //        possibilities.push((assig.nom.to_string(), grup))
-    //    }
-    //}
-    //dbg!(&grups);
-    //dbg!(&grups[0]);
-    //dbg!(grups.len());
     dbg!(&sessions_per_grup[&GrupParse { num: 10, llengua: Llengua::Catala, sessions: vec![] }]);
     dbg!(&grups[0]);
     
     
-    //let mut h = Horari::generate_from_groups(&assignatures, &grups[0][0]).unwrap();
+    let mut h = Horari::generate_from_groups(sessions_per_grup).unwrap();
 
-    //println!("{h}");
+    println!("{h}");
 
 
     
