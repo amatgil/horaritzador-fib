@@ -1,11 +1,11 @@
-use std::{cmp::Ordering, collections::{HashMap, HashSet}};
+use std::{cmp::Ordering, collections::{HashMap, HashSet}, fmt::Display};
 
 mod parsing;
 use parsing::parse_raw_horari;
 
 const RAW_HORARI: &str = include_str!("../input_data.txt");
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum Llengua {
     Catala,
     Castella,
@@ -23,7 +23,7 @@ impl TryFrom<&str> for Llengua {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum DiaSetmana {
     Dilluns, Dimarts, Dimecres,
     Dijous, Divendres
@@ -43,13 +43,13 @@ impl TryFrom<&str> for DiaSetmana {
     }
 }
 
-#[derive(Debug, Clone)]
-struct Assignatura {
+#[derive(Debug, Clone, PartialEq)]
+struct AssignaturaParse {
     nom: String,
-    grups: Vec<Grup>,
+    grups: Vec<GrupParse>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct Sessio {
     dia: DiaSetmana,
     start: usize,
@@ -57,11 +57,19 @@ struct Sessio {
 }
 
 #[derive(Debug, Clone)]
-struct Grup {
+struct GrupParse {
     num: usize,
     llengua: Llengua,
     sessions: Vec<Sessio>,
 }
+
+impl PartialEq for GrupParse {
+    fn eq(&self, other: &Self) -> bool {
+        self.num == other.num &&
+            self.llengua == other.llengua
+    }
+}
+    
 
 #[derive(Debug, Clone)]
 struct AssigDisplay {
@@ -75,6 +83,27 @@ struct Horari([Day; 5]);
 #[derive(Debug, Clone, Default)]
 struct Day([Option<AssigDisplay>; 6]);
 
+impl Display for Horari {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut out = "|      | Dilluns | Dimarts | Dimecres | Dijous | Divendres |".to_string();
+        out.push('\n');
+        out.push_str("----------------------------------------------------------------");
+        out.push('\n');
+        for h_i in 0..6 {
+            out.push_str(&format!("|{: >6}|", h_i + 8));
+            for d in &self.0 {
+                match &d.0[h_i] {
+                    Some(a) => out.push_str(&format!(" {: >4} {: >2} |", a.nom, a.grup)),
+                    None    => out.push_str(&format!("         |", )),
+                }
+            }
+            out.push('\n');
+        }
+
+        write!(f, "{}", out)
+    }
+}
+
 impl Horari {
     fn add_assig(&mut self, sess: &Sessio, assig: &AssigDisplay) {
         let i = sess.dia as usize;
@@ -84,6 +113,13 @@ impl Horari {
     }
     fn comença_a_les_vuit(&self) -> bool {
         self.0.iter().any(|d| d.0[0].is_some())
+    }
+    fn generate_from_groups(gs: &[(String, GrupParse)]) -> Option<Self> {
+        let mut h = Self::default();
+        for (s, g) in gs {
+            
+        }
+        todo!()
     }
 }
 
@@ -109,19 +145,49 @@ impl Ord for Horari {
 fn main() {
     use itertools::Itertools;
 
-    let mut assignatures: Vec<Assignatura> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
+    let mut assignatures: Vec<AssignaturaParse> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
 
     let noms: Vec<_> = assignatures.iter().map(|a| a.nom.clone()).collect();
-    let grups: Vec<_> = assignatures.iter().map(|a| a.grups.clone()).flatten().collect();
+    let grups: Vec<Vec<_>> = assignatures.iter().map(|a| a.grups.clone()).collect();
 
-    let mut x = 0;
-    for gs in assignatures.into_iter().map(|g| g.grups).multi_cartesian_product() {
+    //let mut x = 0;
+    //for g in grups {
+    //    //dbg!(g);
+    //    println!("{}", g.len());
+    //    x += 1;
+    //}
+    //dbg!(x);
 
-        //dbg!(gs.len());
-        //dbg!(x);
-        x += 1;
-    }
-    dbg!(x);
+    
+    let mut h = Horari::default();
+
+    h.add_assig(
+        &Sessio {
+            dia: DiaSetmana::Dilluns,
+            start: 8,
+            finish: 10,
+        },
+        &AssigDisplay {
+            nom: "EC".into(),
+            grup: 11,
+            llengua: Llengua::Catala,
+        }
+    );
+    h.add_assig(
+        &Sessio {
+            dia: DiaSetmana::Dimarts,
+            start: 9,
+            finish: 11,
+        },
+        &AssigDisplay {
+            nom: "IC_T".into(),
+            grup: 18,
+            llengua: Llengua::Castella,
+        }
+    );
+    println!("{h}");
+
+
     
 }
 

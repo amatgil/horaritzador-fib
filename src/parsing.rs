@@ -36,7 +36,7 @@ fn parse_sessio(input: &str) -> IResult<&str, Sessio> {
                         start: start as usize,
                         finish: end as usize }))
 }
-fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>> {
+fn parse_grup(input: &str) -> IResult<&str, Vec<GrupParse>> {
     let newl_tab = tag("\n\t");
     let (input, _) = newl_tab(input)?;
 
@@ -68,7 +68,7 @@ fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>> {
     dbg!(n_sessions, &sessions);
 
 
-    let grups: Vec<_> = nums.into_iter().map(|g| Grup {
+    let grups: Vec<_> = nums.into_iter().map(|g| GrupParse {
         num: g as usize,
         llengua: llengua.try_into().unwrap(),
         sessions: sessions.clone(),
@@ -77,14 +77,14 @@ fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>> {
     Ok((input, grups))
 }
 
-fn parse_assig(input: &str) -> IResult<&str, Assignatura> {
+fn parse_assig(input: &str) -> IResult<&str, AssignaturaParse> {
     let (input, assig_name) = take_till1(|c| c == '\n')(input)?;
     let (input, _) = tag("\n")(input)?;
     let (input, _num_grups) = complete::u32(input)?;
 
     let (input, grups) = many1(parse_grup)(input)?;
 
-    let final_assig = Assignatura {
+    let final_assig = AssignaturaParse {
         nom: assig_name.into(),
         grups: grups.into_iter().flatten().collect(),
     };
@@ -92,7 +92,7 @@ fn parse_assig(input: &str) -> IResult<&str, Assignatura> {
     Ok((dbg!(input), final_assig))
 }
 
-pub fn parse_raw_horari(input: &str) -> IResult<&str, Vec<Assignatura>> {
+pub fn parse_raw_horari(input: &str) -> IResult<&str, Vec<AssignaturaParse>> {
     let (input, output) = separated_list0(tag("\n"), parse_assig)(input)?;
 
     Ok((input, output))
