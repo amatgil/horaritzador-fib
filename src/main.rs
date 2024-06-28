@@ -105,21 +105,32 @@ impl Display for Horari {
 }
 
 impl Horari {
-    fn add_assig(&mut self, sess: &Sessio, assig: &AssigDisplay) {
+    fn add_assig(&mut self, sess: &Sessio, assig: &AssigDisplay) -> Result<(), ()> {
         let i = sess.dia as usize;
         for h in sess.start..sess.finish {
+            if self.0[i].0[h - 8].is_some() { return Err(()); }
             self.0[i].0[h - 8] = Some(assig.clone());
         }
+        Ok(())
     }
     fn comença_a_les_vuit(&self) -> bool {
         self.0.iter().any(|d| d.0[0].is_some())
     }
-    fn generate_from_groups(gs: &[(String, GrupParse)]) -> Option<Self> {
+    fn generate_from_groups(assignatures: &[AssignaturaParse], grup: &GrupParse) -> Option<Self> {
         let mut h = Self::default();
-        for (s, g) in gs {
-            
+        for assig in assignatures {
+            if let Some(_) = assig.grups.iter().position(|g| g == grup) {
+                let assig_display = AssigDisplay {
+                    nom: assig.nom.clone(),
+                    grup: grup.num,
+                    llengua: grup.llengua,
+                };
+                for sessio in &grup.sessions {
+                    h.add_assig(&sessio, &assig_display).ok()?
+                }
+            }
         }
-        todo!()
+        Some(h)
     }
 }
 
@@ -159,32 +170,8 @@ fn main() {
     //dbg!(x);
 
     
-    let mut h = Horari::default();
+    let mut h = Horari::generate_from_groups(&assignatures, &grups[0][0]).unwrap();
 
-    h.add_assig(
-        &Sessio {
-            dia: DiaSetmana::Dilluns,
-            start: 8,
-            finish: 10,
-        },
-        &AssigDisplay {
-            nom: "EC".into(),
-            grup: 11,
-            llengua: Llengua::Catala,
-        }
-    );
-    h.add_assig(
-        &Sessio {
-            dia: DiaSetmana::Dimarts,
-            start: 9,
-            finish: 11,
-        },
-        &AssigDisplay {
-            nom: "IC_T".into(),
-            grup: 18,
-            llengua: Llengua::Castella,
-        }
-    );
     println!("{h}");
 
 
