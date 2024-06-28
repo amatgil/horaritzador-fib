@@ -1,11 +1,11 @@
-use std::{cmp::Ordering, collections::{HashMap, HashSet}, fmt::Display};
+use std::{cmp::Ordering, collections::{HashMap, HashSet}, fmt::Display, hash::Hash};
 
 mod parsing;
 use parsing::parse_raw_horari;
 
 const RAW_HORARI: &str = include_str!("../input_data.txt");
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Llengua {
     Catala,
     Castella,
@@ -67,6 +67,14 @@ impl PartialEq for GrupParse {
     fn eq(&self, other: &Self) -> bool {
         self.num == other.num &&
             self.llengua == other.llengua
+    }
+}
+impl Eq for GrupParse {}
+
+impl Hash for GrupParse {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.num.hash(state);
+        self.llengua.hash(state);
     }
 }
     
@@ -158,21 +166,39 @@ fn main() {
 
     let mut assignatures: Vec<AssignaturaParse> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
 
-    let noms: Vec<_> = assignatures.iter().map(|a| a.nom.clone()).collect();
-    let grups: Vec<Vec<_>> = assignatures.iter().map(|a| a.grups.clone()).collect();
+    //let noms: Vec<_> = assignatures.iter().map(|a| a.nom.clone()).collect();
+    let grups: Vec<_> = assignatures.iter().map(|a| a.grups.clone()).flatten().collect();
 
-    //let mut x = 0;
-    //for g in grups {
-    //    //dbg!(g);
-    //    println!("{}", g.len());
-    //    x += 1;
-    //}
-    //dbg!(x);
+    let mut sessions_per_grup: HashMap<GrupParse, Vec<Sessio>> = HashMap::new();
+
+    for grup in &grups {
+        let sessions: Vec<Sessio> = assignatures
+            .iter()
+            .filter(|a| a.grups.contains(&grup))
+            .map(|a| a.grups[a.grups.iter().position(|g| g == grup).unwrap()].sessions.clone())
+            .flatten()
+            .collect::<Vec<_>>();
+
+        sessions_per_grup.insert(grup.clone(), sessions);
+    }
 
     
-    let mut h = Horari::generate_from_groups(&assignatures, &grups[0][0]).unwrap();
+    //let mut possibilities: Vec<(String, GrupParse)> = vec![];
+    //for assig in assignatures {
+    //    for grup in assig.grups {
+    //        possibilities.push((assig.nom.to_string(), grup))
+    //    }
+    //}
+    //dbg!(&grups);
+    //dbg!(&grups[0]);
+    //dbg!(grups.len());
+    dbg!(&sessions_per_grup[&GrupParse { num: 10, llengua: Llengua::Catala, sessions: vec![] }]);
+    dbg!(&grups[0]);
+    
+    
+    //let mut h = Horari::generate_from_groups(&assignatures, &grups[0][0]).unwrap();
 
-    println!("{h}");
+    //println!("{h}");
 
 
     

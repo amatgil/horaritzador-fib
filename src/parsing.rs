@@ -25,7 +25,6 @@ fn parse_sessio(input: &str) -> IResult<&str, Sessio> {
         tag("dijous"), tag("divendres"),
     ))(input)?;
 
-    dbg!(input);
     let (input, _) = space0(input)?;
     let (input, start) = complete::u32(input)?;
     let (input, _) = space0(input)?;
@@ -58,14 +57,12 @@ fn parse_grup(input: &str) -> IResult<&str, Vec<GrupParse>> {
     let (input, _) = tag("\n")(input)?;
 
     let mut sessions = Vec::new();
-    dbg!(input);
     let mut input = input;
     for _ in 0..n_sessions {
         let (newinput, sessio) = parse_sessio(input)?;
         sessions.push(sessio);
         input = newinput;
     }
-    dbg!(n_sessions, &sessions);
 
 
     let grups: Vec<_> = nums.into_iter().map(|g| GrupParse {
@@ -89,7 +86,7 @@ fn parse_assig(input: &str) -> IResult<&str, AssignaturaParse> {
         grups: grups.into_iter().flatten().collect(),
     };
 
-    Ok((dbg!(input), final_assig))
+    Ok((input, final_assig))
 }
 
 pub fn parse_raw_horari(input: &str) -> IResult<&str, Vec<AssignaturaParse>> {
