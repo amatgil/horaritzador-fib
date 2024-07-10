@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::{HashMap, HashSet}, default, fmt::Display, hash::Hash};
+use std::{cmp::Ordering, collections::{HashMap, HashSet}, default, fmt::Display, hash::Hash, ops::Not};
 
 mod parsing;
 use parsing::parse_raw_horari;
@@ -105,16 +105,16 @@ impl Display for ProtoHorari {
 }
 impl Display for Horari {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut out = "|      | Dilluns | Dimarts | Dimecres | Dijous | Divendres |".to_string();
+        let mut out = "|      |  Dilluns  |  Dimarts  |  Dimecres |   Dijous  |  Divendres  |".to_string();
         out.push('\n');
-        out.push_str("----------------------------------------------------------------");
+        out.push_str("---------------------------------------------------------------------");
         out.push('\n');
         for h_i in 0..6 {
             out.push_str(&format!("|{: >6}|", h_i + 8));
             for d in &self.0 {
                 match &d.0[h_i] {
-                    Some(a) => out.push_str(&format!(" {: >4} {: >2} |", a.nom, a.grup)),
-                    None    => out.push_str(&format!("         |", )),
+                    Some(a) => out.push_str(&format!("{: >6}{: >4} |", a.nom, a.grup)),
+                    None    => out.push_str(&format!("{: >11}|", "")),
                 }
             }
             out.push('\n');
@@ -125,33 +125,15 @@ impl Display for Horari {
 }
 
 impl Horari {
-    fn add_assig(&mut self, sess: &Sessio, assig: &AssigDisplay) -> Result<(), ()> {
-        let i = sess.dia as usize;
-        for h in sess.start..sess.finish {
-            if self.0[i].0[h - 8].is_some() { return Err(()); }
-            self.0[i].0[h - 8] = Some(assig.clone());
-        }
-        Ok(())
-    }
     fn comença_a_les_vuit(&self) -> bool {
         self.0.iter().any(|d| d.0[0].is_some())
     }
+    fn quants_dies_comença_tard(&self) -> usize {
+        self.0.iter().count(|d| d.0[0].is_some())
+    }
+
     fn te_dia_lliure(&self) -> bool {
         self.0.iter().any(|d| d.0.iter().all(|h| h.is_none()))
-    }
-    fn generate_from_groups(map: HashMap<GrupParse, (String, Vec<Sessio>)>) -> Option<Self> {
-        let mut h = Horari::default();
-        for (grup, (nom, sessions)) in map.into_iter() {
-            let display = AssigDisplay {
-                nom,
-                grup: grup.num,
-                llengua: grup.llengua,
-            };
-            for sessio in sessions {
-                h.add_assig(&sessio, &display).ok()?;
-            }
-        }
-        Some(h)
     }
 }
 
@@ -166,8 +148,8 @@ impl PartialEq for Horari {
 
 impl Ord for Horari {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.comença_a_les_vuit().cmp(&other.comença_a_les_vuit())
-            .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()).reverse())
+        self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard()
+        //(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
     }
 }
 
@@ -220,21 +202,23 @@ fn all_permutations(assigs: &[AssignaturaParse]) -> Vec<ProtoHorari> {
 
 
 fn main() {
-    use itertools::Itertools;
-
     let assignatures: Vec<AssignaturaParse> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
 
     println!("Getting permutations...");
     let perms = all_permutations(&assignatures);
-    //for p in &perms { println!("{p}"); }
+    println!("Found {} permutations", perms.len());
 
     println!("Getting valid ones...");
-    let hs: Vec<Horari> = perms.into_iter().filter_map(|ph| ph.try_into().ok()).collect();
-    //for h in &hs {    println!("{h}");}
-    println!("Tallying up....");
-    println!("There are {} valid ones", hs.len());
+    let mut hs: Vec<Horari> = perms.into_iter().filter_map(|ph| ph.try_into().ok()).collect();
+    println!("There are {} valid horaris", hs.len());
 
+    dbg!(hs.sort_by(|a, b| b.cmp(a)));
+    println!("Els millors, en teoria, son:");
 
+    let quants = 6;
+    for i in 0..quants {
+        println!("{}", hs[i])
+    }
     
 }
 
