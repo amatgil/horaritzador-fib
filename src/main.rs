@@ -1,12 +1,13 @@
-use std::{cmp::Ordering, collections::{HashMap, HashSet}, fmt::Display, hash::Hash};
+use std::{cmp::Ordering, collections::{HashMap, HashSet}, default, fmt::Display, hash::Hash};
 
 mod parsing;
 use parsing::parse_raw_horari;
 
 const RAW_HORARI: &str = include_str!("../input_data.txt");
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 enum Llengua {
+    #[default]
     Catala,
     Castella,
     Angles
@@ -56,7 +57,7 @@ struct Sessio {
     finish: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct GrupParse {
     num: usize,
     llengua: Llengua,
@@ -87,10 +88,21 @@ struct AssigDisplay {
 }
 
 #[derive(Debug, Clone, Default)]
+struct ProtoHorari(Vec<(String, GrupParse)>);
+#[derive(Debug, Clone, Default)]
 struct Horari([Day; 5]);
 #[derive(Debug, Clone, Default)]
 struct Day([Option<AssigDisplay>; 6]);
 
+impl Display for ProtoHorari {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut out = String::new();
+        for h in &self.0 {
+            out.push_str(&format!("{}{} ", h.0, h.1.num));
+        }
+        write!(f, "{out}")
+    }
+}
 impl Display for Horari {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut out = "|      | Dilluns | Dimarts | Dimecres | Dijous | Divendres |".to_string();
@@ -124,6 +136,9 @@ impl Horari {
     fn comença_a_les_vuit(&self) -> bool {
         self.0.iter().any(|d| d.0[0].is_some())
     }
+    fn te_dia_lliure(&self) -> bool {
+        self.0.iter().any(|d| d.0.iter().all(|h| h.is_none()))
+    }
     fn generate_from_groups(map: HashMap<GrupParse, (String, Vec<Sessio>)>) -> Option<Self> {
         let mut h = Horari::default();
         for (grup, (nom, sessions)) in map.into_iter() {
@@ -151,12 +166,30 @@ impl PartialEq for Horari {
 
 impl Ord for Horari {
     fn cmp(&self, other: &Self) -> Ordering {
-        if       self.comença_a_les_vuit() && !other.comença_a_les_vuit() { Ordering::Less }
-        else if !self.comença_a_les_vuit() &&  other.comença_a_les_vuit() { Ordering::Greater }
-        else { // Cap dels dos comença a les 8
-            Ordering::Equal // TODO: Add more ordering criteria
+        self.comença_a_les_vuit().cmp(&other.comença_a_les_vuit())
+            .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()).reverse())
+    }
+}
+
+fn all_permutations(assigs: &[AssignaturaParse]) -> Vec<ProtoHorari> {
+    let mut output = vec![];
+    if assigs.len() <= 1 {
+        for grup in &assigs[0].grups {
+            output.push(ProtoHorari(vec![(assigs[0].nom.clone(), grup.clone())]));
+        }
+    } else {
+        let rest = all_permutations(&assigs[1..]);
+        for grup in &assigs[0].grups {
+            for r in &rest {
+                let mut new_line = r.clone();
+                new_line.0.push(dbg!(assigs[0].nom.clone(), grup.clone()));
+                output.push(new_line);
+            }
+
         }
     }
+
+    output
 }
 
 fn main() {
@@ -164,31 +197,33 @@ fn main() {
 
     let mut assignatures: Vec<AssignaturaParse> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
 
-    //let noms: Vec<_> = assignatures.iter().map(|a| a.nom.clone()).collect();
-    let grups: Vec<_> = assignatures.iter().map(|a| a.grups.clone()).flatten().collect();
-
-    let mut sessions_per_grup: HashMap<GrupParse, (String, Vec<Sessio>)> = HashMap::new();
-
-    for grup in &grups {
-        let sessions = assignatures
-            .iter()
-            .filter(|a| a.grups.contains(&grup))
-            .map(|a| (a.nom.clone(), a.grups[a.grups.iter().position(|g| g == grup).unwrap()].sessions.clone()))
-            .collect::<Vec<_>>();
-
-        let nom = sessions[0].0.clone();
-        let actual_sessions = sessions.into_iter().map(|(_, x)| x).flatten().collect();
-        sessions_per_grup.insert(grup.clone(), (nom, actual_sessions));
+    //dbg!(&assignatures[0]);
+    //let perms = all_permutations(&assignatures[0..1]);
+    let input = vec![
+        AssignaturaParse { nom: "A".into(), grups: vec![
+            GrupParse { num: 1, ..Default::default() },
+            GrupParse { num: 2, ..Default::default() },
+            GrupParse { num: 3, ..Default::default() },
+        ]},
+        AssignaturaParse { nom: "B".into(), grups: vec![
+            GrupParse { num: 2, ..Default::default() },
+            GrupParse { num: 3, ..Default::default() },
+        ]},
+        AssignaturaParse { nom: "C".into(), grups: vec![
+            GrupParse { num: 1, ..Default::default() },
+        ]},
+        AssignaturaParse { nom: "D".into(), grups: vec![
+            GrupParse { num: 2, ..Default::default() },
+            GrupParse { num: 3, ..Default::default() },
+            GrupParse { num: 4, ..Default::default() },
+        ]},
+    ];
+    let perms = all_permutations(&input);
+    for p in &perms {
+        println!("{p}");
     }
+    dbg!(perms.len());
 
-    
-    dbg!(&sessions_per_grup[&GrupParse { num: 10, llengua: Llengua::Catala, sessions: vec![] }]);
-    dbg!(&grups[0]);
-    
-    
-    let mut h = Horari::generate_from_groups(sessions_per_grup).unwrap();
-
-    println!("{h}");
 
 
     
