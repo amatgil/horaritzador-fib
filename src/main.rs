@@ -171,6 +171,32 @@ impl Ord for Horari {
     }
 }
 
+impl TryFrom<ProtoHorari> for Horari {
+    type Error = ();
+    fn try_from(value: ProtoHorari) -> Result<Self, ()> {
+        let mut s = Horari::default();
+
+        for (nom, GrupParse { num, llengua, sessions }) in &value.0 {
+            for Sessio { dia, start, finish } in sessions {
+                let d = &mut s.0[*dia as usize];
+
+                for hora in *start..*finish {
+                    if d.0[hora - 8].is_some() { return Err(()) }
+
+                    d.0[hora - 8] = Some(AssigDisplay {
+                        nom: nom.clone(),
+                        grup: *num,
+                        llengua: *llengua,
+                    });
+                }
+            }
+        }
+
+        Ok(s)
+
+    }
+
+}
 fn all_permutations(assigs: &[AssignaturaParse]) -> Vec<ProtoHorari> {
     let mut output = vec![];
     if assigs.len() <= 1 {
@@ -182,7 +208,7 @@ fn all_permutations(assigs: &[AssignaturaParse]) -> Vec<ProtoHorari> {
         for grup in &assigs[0].grups {
             for r in &rest {
                 let mut new_line = r.clone();
-                new_line.0.push(dbg!(assigs[0].nom.clone(), grup.clone()));
+                new_line.0.push((assigs[0].nom.clone(), grup.clone()));
                 output.push(new_line);
             }
 
@@ -192,38 +218,21 @@ fn all_permutations(assigs: &[AssignaturaParse]) -> Vec<ProtoHorari> {
     output
 }
 
+
 fn main() {
     use itertools::Itertools;
 
-    let mut assignatures: Vec<AssignaturaParse> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
+    let assignatures: Vec<AssignaturaParse> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
 
-    //dbg!(&assignatures[0]);
-    //let perms = all_permutations(&assignatures[0..1]);
-    let input = vec![
-        AssignaturaParse { nom: "A".into(), grups: vec![
-            GrupParse { num: 1, ..Default::default() },
-            GrupParse { num: 2, ..Default::default() },
-            GrupParse { num: 3, ..Default::default() },
-        ]},
-        AssignaturaParse { nom: "B".into(), grups: vec![
-            GrupParse { num: 2, ..Default::default() },
-            GrupParse { num: 3, ..Default::default() },
-        ]},
-        AssignaturaParse { nom: "C".into(), grups: vec![
-            GrupParse { num: 1, ..Default::default() },
-        ]},
-        AssignaturaParse { nom: "D".into(), grups: vec![
-            GrupParse { num: 2, ..Default::default() },
-            GrupParse { num: 3, ..Default::default() },
-            GrupParse { num: 4, ..Default::default() },
-        ]},
-    ];
-    let perms = all_permutations(&input);
-    for p in &perms {
-        println!("{p}");
-    }
-    dbg!(perms.len());
+    println!("Getting permutations...");
+    let perms = all_permutations(&assignatures);
+    //for p in &perms { println!("{p}"); }
 
+    println!("Getting valid ones...");
+    let hs: Vec<Horari> = perms.into_iter().filter_map(|ph| ph.try_into().ok()).collect();
+    //for h in &hs {    println!("{h}");}
+    println!("Tallying up....");
+    println!("There are {} valid ones", hs.len());
 
 
     
