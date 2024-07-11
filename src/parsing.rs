@@ -7,7 +7,7 @@ use nom::{
         tag,
     },
     character::complete::{
-        self, digit0, space0
+        self, space0
     },
     branch::alt,
     multi::{
@@ -35,7 +35,7 @@ fn parse_sessio(input: &str) -> IResult<&str, Sessio> {
                         start: start as usize,
                         finish: end as usize }))
 }
-fn parse_grup(input: &str) -> IResult<&str, Vec<GrupParse>> {
+fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>> {
     let newl_tab = tag("\n\t");
     let (input, _) = newl_tab(input)?;
 
@@ -65,7 +65,7 @@ fn parse_grup(input: &str) -> IResult<&str, Vec<GrupParse>> {
     }
 
 
-    let grups: Vec<_> = nums.into_iter().map(|g| GrupParse {
+    let grups: Vec<_> = nums.into_iter().map(|g| Grup {
         num: g as usize,
         llengua: llengua.try_into().unwrap(),
         sessions: sessions.clone(),
