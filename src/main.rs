@@ -143,17 +143,12 @@ impl<'a> Horari<'a> {
     fn quants_dies_comença_tard(&self) -> usize {
         self.0.iter().filter(|d| d.0[0].is_none()).count()
     }
-    fn num_classes_angles(&self) -> usize { // TODO: Rewrite, this is ugly
-        let mut c = 0;
-        for d in &self.0 {
-            for h in &d.0 {
-                if h.as_ref()
-                    .is_some_and(|classe| classe.llengua == Llengua::Angles) {
-                        c += 1
-                    }
-            }
-        }
-        c
+    fn num_classes_angles(&self) -> usize {
+        self.0.iter()
+            .flat_map(|d| &d.0)                       // Horari 2D -> Iterador 1D
+            .flatten()                                // Agafa només els Some
+            .filter(|h| h.llengua == Llengua::Angles) // Les que son en angles
+            .count()                                  // Quantes n'hi ha?
     }
 
     fn te_dia_lliure(&self) -> bool {
