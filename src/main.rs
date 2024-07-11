@@ -129,7 +129,7 @@ impl Horari {
         self.0.iter().any(|d| d.0[0].is_some())
     }
     fn quants_dies_comença_tard(&self) -> usize {
-        self.0.iter().count(|d| d.0[0].is_some())
+        self.0.iter().filter(|d| d.0[0].is_none()).count()
     }
 
     fn te_dia_lliure(&self) -> bool {
@@ -148,8 +148,8 @@ impl PartialEq for Horari {
 
 impl Ord for Horari {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard()
-        //(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
+        self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard())
+            .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
     }
 }
 
@@ -218,6 +218,11 @@ fn main() {
     let quants = 6;
     for i in 0..quants {
         println!("{}", hs[i])
+    }
+
+    println!("I els pitjors, en teoria, son:");
+    for i in 0..quants {
+        println!("{}", hs[hs.len() - 1 - i]);
     }
     
 }
