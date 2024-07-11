@@ -11,7 +11,8 @@ fn main() {
     let mut hs: Vec<Horari> = perms.into_iter().filter_map(|ph| ph.try_into().ok()).collect();
     println!("There are {} valid horaris", hs.len());
 
-    dbg!(hs.sort_by(|a, b| b.cmp(a)));
+    println!("Sorting the valid ones...");
+    hs.sort_by(|a, b| b.cmp(a));
     println!("Els millors, en teoria, son:");
 
     let quants = 3;

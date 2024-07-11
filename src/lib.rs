@@ -47,10 +47,31 @@ pub struct AssigDisplay<'a> {
 #[derive(Debug, Clone, Default)] pub struct Day<'a>([Option<AssigDisplay<'a>>; 6]);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum DiaSetmana {
+pub enum DiaSetmana {
     Dilluns, Dimarts, Dimecres,
     Dijous, Divendres
 }
+
+impl<'a> Horari<'a> {
+    fn comença_a_les_vuit(&self) -> bool {
+        self.0.iter().any(|d| d.0[0].is_some())
+    }
+    fn quants_dies_comença_tard(&self) -> usize {
+        self.0.iter().filter(|d| d.0[0].is_none()).count()
+    }
+    fn num_classes_angles(&self) -> usize {
+        self.0.iter()
+            .flat_map(|d| &d.0)                       // Horari 2D -> Iterador 1D
+            .flatten()                                // Agafa només els Some
+            .filter(|h| h.llengua == Llengua::Angles) // Les que son en angles
+            .count()                                  // Quantes n'hi ha?
+    }
+
+    fn te_dia_lliure(&self) -> bool {
+        self.0.iter().any(|d| d.0.iter().all(|h| h.is_none()))
+    }
+}
+
 
 impl Display for Llengua {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -118,9 +139,9 @@ impl<'a> Display for ProtoHorari<'a> {
 }
 impl<'a> Display for Horari<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut out = "|      |    Dilluns  |    Dimarts  |   Dimecres  |    Dijous   |   Divendres  |".to_string();
+        let mut out = "|      |    Dilluns  |    Dimarts  |   Dimecres  |    Dijous   |  Divendres  |".to_string();
         out.push('\n');
-        out.push_str("---------------------------------------------------------------------");
+        out.push_str(&std::iter::repeat("-").take(out.len()-1).collect::<String>());
         out.push('\n');
         for h_i in 0..6 {
             out.push_str(&format!("|{: >6}|", h_i + 8));
@@ -134,26 +155,6 @@ impl<'a> Display for Horari<'a> {
         }
 
         write!(f, "{}", out)
-    }
-}
-
-impl<'a> Horari<'a> {
-    fn comença_a_les_vuit(&self) -> bool {
-        self.0.iter().any(|d| d.0[0].is_some())
-    }
-    fn quants_dies_comença_tard(&self) -> usize {
-        self.0.iter().filter(|d| d.0[0].is_none()).count()
-    }
-    fn num_classes_angles(&self) -> usize {
-        self.0.iter()
-            .flat_map(|d| &d.0)                       // Horari 2D -> Iterador 1D
-            .flatten()                                // Agafa només els Some
-            .filter(|h| h.llengua == Llengua::Angles) // Les que son en angles
-            .count()                                  // Quantes n'hi ha?
-    }
-
-    fn te_dia_lliure(&self) -> bool {
-        self.0.iter().any(|d| d.0.iter().all(|h| h.is_none()))
     }
 }
 
