@@ -6,6 +6,7 @@ pub use parsing::parse_raw_horari;
 pub const RAW_HORARI: &str = include_str!("../input_data.txt");
 
 #[derive(Debug, Clone, PartialEq)]
+
 pub struct AssignaturaParse<'a> {
     nom: &'a str,
     grups: Vec<Grup>,
@@ -61,14 +62,23 @@ impl<'a> Horari<'a> {
     }
     fn num_classes_angles(&self) -> usize {
         self.0.iter()
-            .flat_map(|d| &d.0)                       // Horari 2D -> Iterador 1D
-            .flatten()                                // Agafa només els Some
-            .filter(|h| h.llengua == Llengua::Angles) // Les que son en angles
-            .count()                                  // Quantes n'hi ha?
+            .flat_map(|d| &d.0)                      
+            .flatten()                               
+            .filter(|h| h.llengua == Llengua::Angles)
+            .count()                                 
     }
 
     fn te_dia_lliure(&self) -> bool {
         self.0.iter().any(|d| d.0.iter().all(|h| h.is_none()))
+    }
+}
+
+// LA FUNCIÓ IMPORTANT
+impl<'a> Ord for Horari<'a> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard())
+            .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
+            .then(self.num_classes_angles().cmp(&other.num_classes_angles()).reverse())
     }
 }
 
@@ -141,7 +151,7 @@ impl<'a> Display for Horari<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut out = "|      |    Dilluns  |    Dimarts  |   Dimecres  |    Dijous   |  Divendres  |".to_string();
         out.push('\n');
-        out.push_str(&std::iter::repeat("-").take(out.len()-1).collect::<String>());
+        out.push_str(&"-".repeat(out.len()-1));
         out.push('\n');
         for h_i in 0..6 {
             out.push_str(&format!("|{: >6}|", h_i + 8));
@@ -167,13 +177,6 @@ impl<'a> PartialEq for Horari<'a> {
 }
 
 
-impl<'a> Ord for Horari<'a> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard())
-            .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
-            .then(self.num_classes_angles().cmp(&other.num_classes_angles()).reverse())
-    }
-}
 
 impl<'a> TryFrom<ProtoHorari<'a>> for Horari<'a> {
     type Error = ();

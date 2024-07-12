@@ -1,234 +1,183 @@
 BD_T
-3
 	10
 	catala
-	1
 	dimarts 10 12
 
 	20
 	catala
-	1
 	dilluns 8 10
 
 	30
 	catala
-	1
 	dilluns 12 14
 
 BD_L
-4
 	11,12,13
 	catala
-	1
 	dijous 8 10
 
 	21,23
 	catala
-	1
 	dimecres 8 10
 
 	22
 	catala
-	1
 	dimecres 10 12
 
 	31,32,33
 	catala
-	1
 	dijous 12 14
 
 CI_T
-3
 	10
 	catala
-	1
 	divendres 8 10
 
 	20
 	catala
-	1
 	dimarts 12 14
 
 	30
 	catala
-	1
 	dilluns 10 12
 
 CI_L
-8
 	11
 	catala
-	1
 	dilluns 12 14
 
 	12
 	catala
-	1
 	dilluns 10 12
 
 	13
 	catala
-	1
 	dilluns 8 10
 
 	21
 	catala
-	1
 	divendres 10 12
 
 	22
 	catala
-	1
 	divendres 12 14
 
 	23
 	catala
-	1
 	divendres 8 10
 
 	31
 	catala
-	1
 	dimarts 8 10
 
 	32,33
 	catala
-	1
 	dimarts 12 14
 
 EDA_T
-3
 	10
 	angles
-	1
 	divendres 10 12
 
 	20
 	catala
-	1
 	dijous 10 12
 
 	30
 	catala
-	1
 	dimecres 10 12
 
 EDA_L
-3
 	11,12,13
 	angles
-	1
 	dimarts 12 14
 
 	21,22,23
 	catala
-	1
 	dimarts 8 10
 
 	31,32,33
 	catala
-	1
 	dimarts 10 12
 
 SO_T
-3
 	10
 	angles
-	1
 	dijous 10 12
 
 	20
 	catala
-	1
 	dimarts 10 12
 
 	30
 	catala
-	1
 	dimecres 8 10
 
 SO_L
-8
 	11
 	catala
-	1
 	dilluns 8 10
 
 	12
 	catala
-	1
 	dilluns 12 14
 
 	13
 	angles
-	1
 	dilluns 10 12
 
 	21,24
 	catala
-	1
 	dimecres 10 12
 
 	22
 	catala
-	1
 	divendres 10 12
 
 	23
 	angles
-	1
 	divendres 12 14
 
 	31
 	catala
-	1
 	dimarts 12 14
 
 	32,33
 	angles
-	1
 	dimarts 8 10
 
 PE
-7
 	11
 	catala
-	2
 	dilluns 10 12
 	dijous 12 14
 
 	12
 	angles
-	2
 	dimarts 8 10
 	dijous 12 14
 
 	13
 	angles
-	2
 	dilluns 12 14
 	divendres 12 14
 
 	21
 	catala
-	2
 	dilluns 10 12
 	divendres 12 14
 
 	22
 	catala
-	2
 	dijous 8 10
 	divendres 8 10
 
 	23
 	catala
-	2
 	dilluns 10 12
 	divendres 10 12
 
 	31,32
 	catala
-	2
 	dilluns 8 10
 	dijous 10 12

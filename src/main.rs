@@ -1,7 +1,15 @@
 use horaritzador::*;
+use nom::{error::convert_error, Err};
 
 fn main() {
-    let assignatures: Vec<AssignaturaParse> = parse_raw_horari(RAW_HORARI).expect("Could not parse horari").1;
+    let assignatures: Vec<AssignaturaParse> = match parse_raw_horari(RAW_HORARI) {
+        Ok(parsed) => parsed.1,
+        Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+            println!("{}", convert_error(RAW_HORARI, e));
+            std::process::exit(1);
+        },
+        _ => unreachable!(),
+    };
 
     println!("Getting permutations...");
     let perms = all_permutations(&assignatures);
@@ -13,17 +21,14 @@ fn main() {
 
     println!("Sorting the valid ones...");
     hs.sort_by(|a, b| b.cmp(a));
-    println!("Els millors, en teoria, son:");
 
     let quants = 3;
-    for i in 0..quants {
-        println!("{}", hs[i])
-    }
+
+    println!("Els millors, en teoria, son:");
+    for i in 0..quants { println!("{}", hs[i]) }
 
     println!("I els pitjors, en teoria, son:");
-    for i in 0..quants {
-        println!("{}", hs[hs.len() - 1 - i]);
-    }
+    for i in 0..quants { println!("{}", hs[hs.len()-1-i]) }
     
 }
 

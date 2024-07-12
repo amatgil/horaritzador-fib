@@ -1,68 +1,61 @@
 use crate::*;
 
 use nom::{
-    IResult,
-    bytes::complete::{
-        take_till1,
-        tag,
-    },
-    character::complete::{
-        self, space0
-    },
-    branch::alt,
-    multi::{
-        separated_list0,
-        many1,
-    },
+    branch::alt, bytes::complete::{
+        tag, take_till1
+    }, character::complete::{
+        self, multispace0, space0
+    }, error::{context, VerboseError}, multi::{
+        many1, separated_list0, separated_list1
+    }, IResult
 
 };
 
-fn parse_sessio(input: &str) -> IResult<&str, Sessio> {
-    let (input, _) = tag("\t")(input)?;
+fn parse_sessio(input: &str) -> IResult<&str, Sessio, VerboseError<&str>> {
+    let (input, _) = multispace0(input)?;
 
-    let (input, dia) = alt((
-        tag("dilluns"), tag("dimarts"), tag("dimecres"),
-        tag("dijous"), tag("divendres"),
-    ))(input)?;
+    let (input, dia) = context("getting dia de la setmana",
+                               alt((
+                                   tag("dilluns"), tag("dimarts"), tag("dimecres"),
+                                   tag("dijous"), tag("divendres"),
+                               )))(input)?;
 
     let (input, _) = space0(input)?;
-    let (input, start) = complete::u32(input)?;
+    let (input, start) = context("getting start time of session", complete::u32)(input)?;
     let (input, _) = space0(input)?;
-    let (input, end) = complete::u32(input)?;
+    let (input, end) = context("getting end time of session", complete::u32)(input)?;
     let (input, _) = tag("\n")(input)?;
 
     Ok((input, Sessio { dia: dia.try_into().unwrap(),
                         start: start as usize,
                         finish: end as usize }))
 }
-fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>> {
+fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>, VerboseError<&str>> {
     let newl_tab = tag("\n\t");
     let (input, _) = newl_tab(input)?;
 
     // Numero
-    let (input, nums) = separated_list0(tag(","), complete::u32)(input)?;
+    let (input, nums) = context(
+        "getting group numbers",
+        separated_list0(tag(","), complete::u32))(input)?;
     let (input, _) = newl_tab(input)?;
 
     // Llengua
 
-    let (input, llengua) = alt((
-        tag("catala"),
-        tag("castella"),
-        tag("angles"),
-    ))(input)?;
+    let (input, llengua) = context(
+        "getting grup language",
+        alt((
+            tag("catala"),
+            tag("castella"),
+            tag("angles"),
+        )))(input)?;
     let (input, _) = newl_tab(input)?;
 
-    // Dies
-    let (input, n_sessions) = complete::u32(input)?;
-    let (input, _) = tag("\n")(input)?;
-
-    let mut sessions = Vec::new();
-    let mut input = input;
-    for _ in 0..n_sessions {
-        let (newinput, sessio) = parse_sessio(input)?;
-        sessions.push(sessio);
-        input = newinput;
-    }
+    let (input, sessions): (&str, Vec<Sessio>) =
+        context(
+            "getting all sessions of group",
+            many1(parse_sessio)
+        )(input)?;
 
 
     let grups: Vec<_> = nums.into_iter().map(|g| Grup {
@@ -74,23 +67,24 @@ fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>> {
     Ok((input, grups))
 }
 
-fn parse_assig(input: &str) -> IResult<&str, AssignaturaParse> {
+fn parse_assig(input: &str) -> IResult<&str, AssignaturaParse, VerboseError<&str>> {
     let (input, assig_name) = take_till1(|c| c == '\n')(input)?;
-    let (input, _) = tag("\n")(input)?;
-    let (input, _num_grups) = complete::u32(input)?;
 
-    let (input, grups) = many1(parse_grup)(input)?;
+    let (input, grups) = context(
+        "parsing all of the groups",
+        many1(parse_grup)
+    )(input)?;
 
     let final_assig = AssignaturaParse {
-        nom: assig_name.into(),
+        nom: assig_name,
         grups: grups.into_iter().flatten().collect(),
     };
 
     Ok((input, final_assig))
 }
 
-pub fn parse_raw_horari(input: &str) -> IResult<&str, Vec<AssignaturaParse>> {
-    let (input, output) = separated_list0(tag("\n"), parse_assig)(input)?;
+pub fn parse_raw_horari(input: &str) -> IResult<&str, Vec<AssignaturaParse>, VerboseError<&str>> {
+    let (input, output) = separated_list1(tag("\n"), parse_assig)(input)?;
 
     Ok((input, output))
 }
