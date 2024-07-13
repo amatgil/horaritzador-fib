@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{AssigKind, AssignaturaParse, Grup, Sessio};
 
 use nom::{
     branch::alt, bytes::complete::{

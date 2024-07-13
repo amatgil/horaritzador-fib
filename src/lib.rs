@@ -78,7 +78,7 @@ impl<'a> Horari<'a> {
                      || x.kind == y.kind
                      || (x.kind, y.kind) == (None, None)
                      || x.grup / 10 != y.grup / 10) {
-                    cnt += 1
+                    cnt += 1;
                 }
             }
         }
@@ -97,7 +97,7 @@ impl<'a> Horari<'a> {
     }
 
     pub fn te_dia_lliure(&self) -> bool {
-        self.0.iter().any(|d| d.0.iter().all(|h| h.is_none()))
+        self.0.iter().any(|d| d.0.iter().all(std::option::Option::is_none))
     }
     fn as_iter(&self) -> impl Iterator<Item = &AssigDisplay> {
         self.0.iter().flat_map(|d| &d.0).flatten()
@@ -201,7 +201,7 @@ impl<'a> Display for Horari<'a> {
                 match &d.0[h_i] {
                     Some(a) => out.push_str(&format!("{: >4}{: >2}{: >4}({})|",
                                                      a.nom,
-                                                     a.kind.map(|k| format!("_{}", k)).unwrap_or(String::new()),
+                                                     a.kind.map_or(String::new(), |k| format!("_{k}")),
                                                      a.grup,
                                                      a.llengua)),
                     None    => out.push_str(&format!("{: >13}|", "")),
@@ -210,7 +210,7 @@ impl<'a> Display for Horari<'a> {
             out.push('\n');
         }
 
-        write!(f, "{}", out)
+        write!(f, "{out}")
     }
 }
 
@@ -254,7 +254,9 @@ impl<'a> TryFrom<ProtoHorari<'a>> for Horari<'a> {
 
 pub fn all_permutations<'a>(assigs: &[AssignaturaParse<'a>]) -> Vec<ProtoHorari<'a>> {
     let mut output = vec![];
-    if assigs.len() <= 1 {
+    if assigs.is_empty() {
+        return output;
+    } else if assigs.len() == 1 {
         for grup in &assigs[0].grups {
             output.push(ProtoHorari(vec![SelectedAssig {
                 nom: assigs[0].nom,

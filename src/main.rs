@@ -1,4 +1,4 @@
-use horaritzador::*;
+use horaritzador::{AssigKind, AssignaturaParse, Horari, RAW_HORARI, all_permutations, parse_raw_horari};
 use nom::{error::convert_error, Err};
 use std::time::Instant; // Seeing how long things took, unnecessary but neat
 
@@ -7,7 +7,7 @@ fn main() {
     let parsing_start = Instant::now();
     let assignatures: Vec<AssignaturaParse> = match parse_raw_horari(RAW_HORARI) {
         Ok(parsed) => parsed.1,
-        Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+        Err(Err::Error(e) | Err::Failure(e)) => {
             println!("{}", convert_error(RAW_HORARI, e));
             std::process::exit(1);
         },
