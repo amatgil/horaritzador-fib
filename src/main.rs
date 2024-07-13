@@ -1,5 +1,6 @@
 use horaritzador::*;
 use nom::{error::convert_error, Err};
+use std::time::Instant; // Seeing how long things took, unnecessary but neat
 
 fn main() {
     let assignatures: Vec<AssignaturaParse> = match parse_raw_horari(RAW_HORARI) {
@@ -12,15 +13,28 @@ fn main() {
     };
 
     println!("Getting permutations...");
+    let perms_start = Instant::now();
     let perms = all_permutations(&assignatures);
-    println!("Found {} permutations", perms.len());
+    let perms_time = perms_start.elapsed();
+    println!("Found {} permutations in {}s", perms.len(), perms_time.as_secs_f32());
+
+
 
     println!("Getting valid ones...");
+    let filter_start = Instant::now();
     let mut hs: Vec<Horari> = perms.into_iter().filter_map(|ph| ph.try_into().ok()).collect();
-    println!("There are {} valid horaris", hs.len());
+    let filter_time = filter_start.elapsed();
+    println!("There are {} valid horaris in {}s", hs.len(), filter_time.as_secs_f32());
+
+
 
     println!("Sorting the valid ones...");
-    hs.sort_by(|a, b| b.cmp(a));
+    let sort_start = Instant::now();
+    hs.sort_by(|a, b| b.cmp(a)); // Backwards
+    let sort_time = sort_start.elapsed();
+    println!("Sorting done in {}s", sort_time.as_secs_f32());
+
+
 
     let quants = 3;
 
@@ -29,6 +43,13 @@ fn main() {
 
     println!("I els pitjors, en teoria, son:");
     for i in 0..quants { println!("{}", hs[hs.len()-1-i]) }
+
+
+    println!("Times taken:");
+    println!("\t{}s: all permutations", perms_time.as_secs_f32());
+    println!("\t{}s: filtering out invalid ones", filter_time.as_secs_f32());
+    println!("\t{}s: sort from best to worse", sort_time.as_secs_f32());
+    println!("\nTotal time is: {}", (perms_time + filter_time + sort_time).as_secs_f32());
     
 }
 
