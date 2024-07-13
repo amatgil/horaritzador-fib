@@ -3,6 +3,8 @@ use nom::{error::convert_error, Err};
 use std::time::Instant; // Seeing how long things took, unnecessary but neat
 
 fn main() {
+    println!("Parsing input data..");
+    let parsing_start = Instant::now();
     let assignatures: Vec<AssignaturaParse> = match parse_raw_horari(RAW_HORARI) {
         Ok(parsed) => parsed.1,
         Err(Err::Error(e)) | Err(Err::Failure(e)) => {
@@ -11,6 +13,19 @@ fn main() {
         },
         _ => unreachable!(),
     };
+
+    for AssignaturaParse { nom, grups, .. } in assignatures.iter().filter(|a| a.kind == Some(AssigKind::Teoria)) {
+        if let Some(i) = grups.iter().position(|g| g.num % 10 != 0) {
+            println!("[ERROR]: els grups de les classes de teoria han de ser 0 mod 10 (l'assignatura '{}', grup {}, no ho compleix això)",
+                     nom,
+                     grups[i].num
+            );
+            std::process::exit(2);
+        }
+    }
+
+    let parsing_time = parsing_start.elapsed();
+    println!("Parsed input file in {}s", parsing_time.as_secs_f32());
 
     println!("Getting permutations...");
     let perms_start = Instant::now();

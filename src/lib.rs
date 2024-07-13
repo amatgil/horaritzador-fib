@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::HashMap, fmt::Display, hash::Hash};
+use std::{cmp::Ordering, fmt::Display, hash::Hash};
 
 mod parsing;
 pub use parsing::parse_raw_horari;
@@ -7,9 +7,9 @@ pub const RAW_HORARI: &str = include_str!("../input_data.txt");
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AssignaturaParse<'a> {
-    nom: &'a str,
-    kind: Option<AssigKind>,
-    grups: Vec<Grup>,
+    pub nom: &'a str,
+    pub kind: Option<AssigKind>,
+    pub grups: Vec<Grup>,
 }
 
 #[derive(Debug, Clone, PartialEq, Copy, Hash, Eq)]
@@ -20,16 +20,16 @@ pub enum AssigKind {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sessio {
-    dia: DiaSetmana,
-    start: u32,
-    finish: u32,
+    pub dia: DiaSetmana,
+    pub start: u32,
+    pub finish: u32,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct Grup { // TODO: This gets cloned a lot, perhaps the Vec could be avoided?
-    num: usize,
-    llengua: Llengua,
-    sessions: Vec<Sessio>,
+    pub num: usize,
+    pub llengua: Llengua,
+    pub sessions: Vec<Sessio>,
 }
 
 
@@ -74,10 +74,10 @@ impl<'a> Horari<'a> {
         let mut cnt = 0;
         for x in self.as_iter() {
             for y in self.as_iter() {
-                if x.nom == y.nom && x.kind != y.kind &&
-                    x.kind != None &&
-                    y.kind != None &&
-                    x.grup / 10 == y.grup / 10 {
+                if !(x.nom != y.nom
+                     || x.kind == y.kind
+                     || (x.kind, y.kind) == (None, None)
+                     || x.grup / 10 != y.grup / 10) {
                     cnt += 1
                 }
             }
@@ -100,9 +100,7 @@ impl<'a> Horari<'a> {
         self.0.iter().any(|d| d.0.iter().all(|h| h.is_none()))
     }
     fn as_iter(&self) -> impl Iterator<Item = &AssigDisplay> {
-        self.0.iter().map(|d| &d.0)
-            .flatten()
-            .flatten()
+        self.0.iter().flat_map(|d| &d.0).flatten()
     }
 }
 
@@ -203,7 +201,7 @@ impl<'a> Display for Horari<'a> {
                 match &d.0[h_i] {
                     Some(a) => out.push_str(&format!("{: >4}{: >2}{: >4}({})|",
                                                      a.nom,
-                                                     a.kind.and_then(|k| Some(format!("_{}", k))).unwrap_or(String::new()),
+                                                     a.kind.map(|k| format!("_{}", k)).unwrap_or(String::new()),
                                                      a.grup,
                                                      a.llengua)),
                     None    => out.push_str(&format!("{: >13}|", "")),
@@ -242,7 +240,7 @@ impl<'a> TryFrom<ProtoHorari<'a>> for Horari<'a> {
                         nom,
                         grup: *num,
                         llengua: *llengua,
-                        kind: kind.clone()
+                        kind: *kind
                     });
                 }
             }
