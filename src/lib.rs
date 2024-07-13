@@ -71,16 +71,14 @@ impl<'a> Horari<'a> {
         self.0.iter().any(|d| d.0[0].is_some())
     }
     fn grups_same_teoria_lab(&self) -> usize { // TODO: O(n^2), optimization would be great
-        use AssigKind as K;
         let mut cnt = 0;
         for x in self.as_iter() {
             for y in self.as_iter() {
-                if x.nom == y.nom && x.kind != y.kind {
-                    match (x.kind, y.kind) {
-                        (Some(K::Teoria), Some(K::Lab)) => if y.grup / 10 == x.grup / 10 { cnt += 1 },
-                        (Some(K::Lab), Some(K::Teoria)) => if x.grup / 10 == y.grup / 10 { cnt += 1 },
-                        _ => continue,
-                    }
+                if x.nom == y.nom && x.kind != y.kind &&
+                    x.kind != None &&
+                    y.kind != None &&
+                    x.grup / 10 == y.grup / 10 {
+                    cnt += 1
                 }
             }
         }
@@ -124,7 +122,7 @@ impl Display for AssigKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let c = match self {
             AssigKind::Teoria => 't',
-            AssigKind::Lab => 'l',
+            AssigKind::Lab    => 'l',
         };
         write!(f, "{c}")
     }
@@ -132,9 +130,9 @@ impl Display for AssigKind {
 impl Display for Llengua {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let c = match &self {
-            Llengua::Catala => 'ç',
+            Llengua::Catala   => 'ç',
             Llengua::Castella => 'ñ',
-            Llengua::Angles => 'a',
+            Llengua::Angles   => 'a',
         };
         write!(f, "{c}")
     }
@@ -144,10 +142,10 @@ impl TryFrom<&str> for Llengua {
     type Error = ();
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
-            "catala" => Ok(Llengua::Catala),
+            "catala"   => Ok(Llengua::Catala),
             "castella" => Ok(Llengua::Castella),
-            "angles" => Ok(Llengua::Angles),
-            _ => Err(()),
+            "angles"   => Ok(Llengua::Angles),
+            _          => Err(()),
         }
     }
 }
