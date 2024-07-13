@@ -36,8 +36,6 @@ fn parse_grup(input: &str) -> IResult<&str, Vec<Grup>, VerboseError<&str>> {
         separated_list1(tag(","), complete::u32))(input)?;
     let (input, _) = multispace0(input)?;
 
-    // Llengua
-
     let (input, llengua) = context(
         "getting grup language ('catala', 'castella', 'angles')",
         alt((
