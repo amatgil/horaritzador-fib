@@ -10,7 +10,6 @@ BD_T
 	30
 	catala
 	dilluns 12 14
-
 BD_L
 	11,12,13
 	catala
@@ -27,7 +26,6 @@ BD_L
 	31,32,33
 	catala
 	dijous 12 14
-
 CI_T
 	10
 	catala
@@ -40,7 +38,6 @@ CI_T
 	30
 	catala
 	dilluns 10 12
-
 CI_L
 	11
 	catala
@@ -73,7 +70,6 @@ CI_L
 	32,33
 	catala
 	dimarts 12 14
-
 EDA_T
 	10
 	angles
@@ -86,7 +82,6 @@ EDA_T
 	30
 	catala
 	dimecres 10 12
-
 EDA_L
 	11,12,13
 	angles
@@ -99,7 +94,6 @@ EDA_L
 	31,32,33
 	catala
 	dimarts 10 12
-
 SO_T
 	10
 	angles
@@ -112,7 +106,6 @@ SO_T
 	30
 	catala
 	dimecres 8 10
-
 SO_L
 	11
 	catala

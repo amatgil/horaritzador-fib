@@ -15,8 +15,8 @@ pub struct AssignaturaParse<'a> {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sessio {
     dia: DiaSetmana,
-    start: usize,
-    finish: usize,
+    start: u32,
+    finish: u32,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -188,9 +188,9 @@ impl<'a> TryFrom<ProtoHorari<'a>> for Horari<'a> {
                 let d = &mut s.0[*dia as usize];
 
                 for hora in *start..*finish {
-                    if d.0[hora - 8].is_some() { return Err(()) }
+                    if d.0[hora as usize - 8].is_some() { return Err(()) }
 
-                    d.0[hora - 8] = Some(AssigDisplay {
+                    d.0[hora as usize - 8] = Some(AssigDisplay {
                         nom,
                         grup: *num,
                         llengua: *llengua,
@@ -219,7 +219,6 @@ pub fn all_permutations<'a>(assigs: &[AssignaturaParse<'a>]) -> Vec<ProtoHorari<
                 new_line.0.push((assigs[0].nom, grup.clone()));
                 output.push(new_line);
             }
-
         }
     }
 
