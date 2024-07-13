@@ -71,11 +71,11 @@ impl<'a> Horari<'a> {
         self.0.iter().any(|d| d.0[0].is_some())
     }
     fn grups_same_teoria_lab(&self) -> usize {
-        let mut instances: HashMap<(&&str, &AssigKind, usize), usize> = HashMap::new();
+        let mut instances: HashMap<(&str, &AssigKind, usize), usize> = HashMap::new();
 
         for x in self.as_iter() {
             if let Some(k) = &x.kind {
-                *instances.entry((&x.nom, k, x.grup / 10)).or_insert(0) += 1;
+                *instances.entry((x.nom, k, x.grup / 10)).or_insert(0) += 1;
             } 
         }
 
