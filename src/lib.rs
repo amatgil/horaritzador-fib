@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, fmt::Display, hash::Hash};
+use std::{cmp::Ordering, collections::HashMap, fmt::Display, hash::Hash};
 
 mod parsing;
 pub use parsing::parse_raw_horari;
@@ -70,21 +70,18 @@ impl<'a> Horari<'a> {
     pub fn comença_a_les_vuit(&self) -> bool {
         self.0.iter().any(|d| d.0[0].is_some())
     }
-    fn grups_same_teoria_lab(&self) -> usize { // TODO: O(n^2), optimization would be great
-        let mut cnt = 0;
+    fn grups_same_teoria_lab(&self) -> usize {
+        let mut instances: HashMap<(&&str, &AssigKind, usize), usize> = HashMap::new();
+
         for x in self.as_iter() {
-            for y in self.as_iter() {
-                if !(x.nom != y.nom
-                     || x.kind == y.kind
-                     || (x.kind, y.kind) == (None, None)
-                     || x.grup / 10 != y.grup / 10) {
-                    cnt += 1;
-                }
-            }
+            if let Some(k) = &x.kind {
+                *instances.entry((&x.nom, k, x.grup / 10)).or_insert(0) += 1;
+            } 
         }
 
-        cnt
+        instances.values().sum()
     }
+
     pub fn quants_dies_comença_tard(&self) -> usize {
         self.0.iter().filter(|d| d.0[0].is_none()).count()
     }
@@ -96,8 +93,8 @@ impl<'a> Horari<'a> {
             .count()                                 
     }
 
-    pub fn te_dia_lliure(&self) -> bool {
-        self.0.iter().any(|d| d.0.iter().all(std::option::Option::is_none))
+    pub fn te_dia_lliure(&self) -> usize {
+        self.0.iter().filter(|d| d.0.iter().all(std::option::Option::is_none)).count()
     }
     fn as_iter(&self) -> impl Iterator<Item = &AssigDisplay> {
         self.0.iter().flat_map(|d| &d.0).flatten()
@@ -109,8 +106,8 @@ impl<'a> Horari<'a> {
 impl<'a> Ord for Horari<'a> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard())
-            .then(self.grups_same_teoria_lab().cmp(&other.grups_same_teoria_lab()))
             .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
+            .then(self.grups_same_teoria_lab().cmp(&other.grups_same_teoria_lab()))
             .then(self.num_classes_angles().cmp(&other.num_classes_angles()).reverse())
     }
 }

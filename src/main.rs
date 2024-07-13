@@ -45,7 +45,7 @@ fn main() {
 
     println!("Sorting the valid ones...");
     let sort_start = Instant::now();
-    hs.sort_by(|a, b| b.cmp(a)); // Backwards
+    hs.sort_by(|a, b| b.cmp(a));
     let sort_time = sort_start.elapsed();
     println!("Sorting done in {}s", sort_time.as_secs_f32());
 
