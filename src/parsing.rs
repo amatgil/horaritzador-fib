@@ -61,6 +61,15 @@ fn parse_assig(input: &str) -> IResult<&str, AssignaturaParse, VerboseError<&str
     let (input, _) = multispace0(input)?;
     let (input, assig_name) = take_till1(|c| c == '\n')(input)?;
 
+    let l = assig_name.len();
+    let (assig_name, kind) = if assig_name.len() >= 3 {
+        match &assig_name[l-2..] {
+            "_L" => (&assig_name[..l-2], Some(AssigKind::Lab)),
+            "_T" => (&assig_name[..l-2], Some(AssigKind::Teoria)),
+            _    => (assig_name, None)
+        }
+    } else { (assig_name, None) };
+
     let (input, grups) = context(
         "parsing all of the groups",
         many1(context("parsing grup", parse_grup))
@@ -69,6 +78,7 @@ fn parse_assig(input: &str) -> IResult<&str, AssignaturaParse, VerboseError<&str
     let final_assig = AssignaturaParse {
         nom: assig_name,
         grups: grups.into_iter().flatten().collect(),
+        kind
     };
 
     Ok((input, final_assig))

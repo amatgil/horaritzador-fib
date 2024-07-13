@@ -6,10 +6,16 @@ pub use parsing::parse_raw_horari;
 pub const RAW_HORARI: &str = include_str!("../input_data.txt");
 
 #[derive(Debug, Clone, PartialEq)]
-
 pub struct AssignaturaParse<'a> {
     nom: &'a str,
+    kind: Option<AssigKind>,
     grups: Vec<Grup>,
+}
+
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum AssigKind {
+    Teoria,
+    Lab
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -36,14 +42,21 @@ pub enum Llengua {
 }
 
 #[derive(Debug, Clone)]
+pub struct SelectedAssig<'a> {
+    nom: &'a str,
+    grup: Grup,
+    kind: Option<AssigKind>
+}
+#[derive(Debug, Clone)]
 pub struct AssigDisplay<'a> {
     nom: &'a str,
     grup: usize,
     llengua: Llengua,
+    kind: Option<AssigKind>,
 }
 
 
-#[derive(Debug, Clone, Default)] pub struct ProtoHorari<'a>(Vec<(&'a str, Grup)>);
+#[derive(Debug, Clone, Default)] pub struct ProtoHorari<'a>(Vec<SelectedAssig<'a>>);
 #[derive(Debug, Clone, Default)] pub struct Horari<'a>([Day<'a>; 5]);
 #[derive(Debug, Clone, Default)] pub struct Day<'a>([Option<AssigDisplay<'a>>; 6]);
 
@@ -56,6 +69,9 @@ pub enum DiaSetmana {
 impl<'a> Horari<'a> {
     fn comença_a_les_vuit(&self) -> bool {
         self.0.iter().any(|d| d.0[0].is_some())
+    }
+    fn grups_same_teoria_lab(&self) -> usize {
+        todo!()
     }
     fn quants_dies_comença_tard(&self) -> usize {
         self.0.iter().filter(|d| d.0[0].is_none()).count()
@@ -77,12 +93,22 @@ impl<'a> Horari<'a> {
 impl<'a> Ord for Horari<'a> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard())
+            //.then(self.grups_same_teoria_lab().cmp(&other.grups_same_teoria_lab()))
             .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
             .then(self.num_classes_angles().cmp(&other.num_classes_angles()).reverse())
     }
 }
 
 
+impl Display for AssigKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let c = match self {
+            AssigKind::Teoria => 't',
+            AssigKind::Lab => 'l',
+        };
+        write!(f, "{c}")
+    }
+}
 impl Display for Llengua {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let c = match &self {
@@ -142,7 +168,7 @@ impl<'a> Display for ProtoHorari<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut out = String::new();
         for h in &self.0 {
-            out.push_str(&format!("{}{} ", h.0, h.1.num));
+            out.push_str(&format!("{}{} ", h.nom, h.grup.num));
         }
         write!(f, "{out}")
     }
@@ -157,7 +183,11 @@ impl<'a> Display for Horari<'a> {
             out.push_str(&format!("|{: >6}|", h_i + 8));
             for d in &self.0 {
                 match &d.0[h_i] {
-                    Some(a) => out.push_str(&format!("{: >6}{: >4}({})|", a.nom, a.grup, a.llengua)),
+                    Some(a) => out.push_str(&format!("{: >4}{: >2}{: >4}({})|",
+                                                     a.nom,
+                                                     a.kind.and_then(|k| Some(format!("_{}", k))).unwrap_or(String::new()),
+                                                     a.grup,
+                                                     a.llengua)),
                     None    => out.push_str(&format!("{: >13}|", "")),
                 }
             }
@@ -183,7 +213,7 @@ impl<'a> TryFrom<ProtoHorari<'a>> for Horari<'a> {
     fn try_from(value: ProtoHorari<'a>) -> Result<Self, ()> {
         let mut s = Horari::default();
 
-        for (nom, Grup { num, llengua, sessions }) in &value.0 {
+        for SelectedAssig { nom, grup: Grup { num, llengua, sessions }, kind } in &value.0 {
             for Sessio { dia, start, finish } in sessions {
                 let d = &mut s.0[*dia as usize];
 
@@ -194,6 +224,7 @@ impl<'a> TryFrom<ProtoHorari<'a>> for Horari<'a> {
                         nom,
                         grup: *num,
                         llengua: *llengua,
+                        kind: kind.clone()
                     });
                 }
             }
@@ -209,14 +240,22 @@ pub fn all_permutations<'a>(assigs: &[AssignaturaParse<'a>]) -> Vec<ProtoHorari<
     let mut output = vec![];
     if assigs.len() <= 1 {
         for grup in &assigs[0].grups {
-            output.push(ProtoHorari(vec![(assigs[0].nom, grup.clone())]));
+            output.push(ProtoHorari(vec![SelectedAssig {
+                nom: assigs[0].nom,
+                grup: grup.clone(),
+                kind:assigs[0].kind, 
+            }]));
         }
     } else {
         let rest = all_permutations(&assigs[1..]);
         for grup in &assigs[0].grups {
             for r in &rest {
                 let mut new_line = r.clone();
-                new_line.0.push((assigs[0].nom, grup.clone()));
+                new_line.0.push(SelectedAssig {
+                    nom: assigs[0].nom,
+                    grup: grup.clone(),
+                    kind:assigs[0].kind, 
+                });
                 output.push(new_line);
             }
         }
