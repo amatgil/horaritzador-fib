@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, fmt::Display, hash::Hash};
+use std::{cmp::Ordering, collections::HashMap, fmt::Display, hash::Hash};
 
 mod parsing;
 pub use parsing::parse_raw_horari;
@@ -12,7 +12,7 @@ pub struct AssignaturaParse<'a> {
     grups: Vec<Grup>,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, Hash, Eq)]
 pub enum AssigKind {
     Teoria,
     Lab
@@ -47,7 +47,7 @@ pub struct SelectedAssig<'a> {
     grup: Grup,
     kind: Option<AssigKind>
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AssigDisplay<'a> {
     nom: &'a str,
     grup: usize,
@@ -67,16 +67,30 @@ pub enum DiaSetmana {
 }
 
 impl<'a> Horari<'a> {
-    fn comença_a_les_vuit(&self) -> bool {
+    pub fn comença_a_les_vuit(&self) -> bool {
         self.0.iter().any(|d| d.0[0].is_some())
     }
-    fn grups_same_teoria_lab(&self) -> usize {
-        todo!()
+    fn grups_same_teoria_lab(&self) -> usize { // TODO: O(n^2), optimization would be great
+        use AssigKind as K;
+        let mut cnt = 0;
+        for x in self.as_iter() {
+            for y in self.as_iter() {
+                if x.nom == y.nom && x.kind != y.kind {
+                    match (x.kind, y.kind) {
+                        (Some(K::Teoria), Some(K::Lab)) => if y.grup / 10 == x.grup / 10 { cnt += 1 },
+                        (Some(K::Lab), Some(K::Teoria)) => if x.grup / 10 == y.grup / 10 { cnt += 1 },
+                        _ => continue,
+                    }
+                }
+            }
+        }
+
+        cnt
     }
-    fn quants_dies_comença_tard(&self) -> usize {
+    pub fn quants_dies_comença_tard(&self) -> usize {
         self.0.iter().filter(|d| d.0[0].is_none()).count()
     }
-    fn num_classes_angles(&self) -> usize {
+    pub fn num_classes_angles(&self) -> usize {
         self.0.iter()
             .flat_map(|d| &d.0)                      
             .flatten()                               
@@ -84,16 +98,22 @@ impl<'a> Horari<'a> {
             .count()                                 
     }
 
-    fn te_dia_lliure(&self) -> bool {
+    pub fn te_dia_lliure(&self) -> bool {
         self.0.iter().any(|d| d.0.iter().all(|h| h.is_none()))
     }
+    fn as_iter(&self) -> impl Iterator<Item = &AssigDisplay> {
+        self.0.iter().map(|d| &d.0)
+            .flatten()
+            .flatten()
+    }
 }
+
 
 // LA FUNCIÓ IMPORTANT
 impl<'a> Ord for Horari<'a> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard())
-            //.then(self.grups_same_teoria_lab().cmp(&other.grups_same_teoria_lab()))
+            .then(self.grups_same_teoria_lab().cmp(&other.grups_same_teoria_lab()))
             .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
             .then(self.num_classes_angles().cmp(&other.num_classes_angles()).reverse())
     }
