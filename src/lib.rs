@@ -242,11 +242,8 @@ impl<'a> TryFrom<ProtoHorari<'a>> for Horari<'a> {
                 }
             }
         }
-
         Ok(s)
-
     }
-
 }
 
 pub fn all_permutations<'a>(assigs: &[AssignaturaParse<'a>]) -> Vec<ProtoHorari<'a>> {
