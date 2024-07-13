@@ -39,16 +39,16 @@ fn main() {
     let quants = 3;
 
     println!("Els millors, en teoria, son:");
-    for i in 0..quants { println!("{}", hs[i]) }
+    for h in hs.iter().take(quants) { println!("{h}") }
 
     println!("I els pitjors, en teoria, son:");
-    for i in 0..quants { println!("{}", hs[hs.len()-1-i]) }
+    for h in hs.iter().rev().take(quants) { println!("{h}") }
 
 
     println!("Times taken:");
-    println!("\t{}s: all permutations", perms_time.as_secs_f32());
+    println!("\t{}s: getting all permutations", perms_time.as_secs_f32());
     println!("\t{}s: filtering out invalid ones", filter_time.as_secs_f32());
-    println!("\t{}s: sort from best to worse", sort_time.as_secs_f32());
+    println!("\t{}s: sorting from best to worse", sort_time.as_secs_f32());
     println!("\nTotal time is: {}", (perms_time + filter_time + sort_time).as_secs_f32());
     
 }
