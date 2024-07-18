@@ -73,6 +73,7 @@ impl<'a> Horari<'a> {
     fn grups_same_teoria_lab(&self) -> usize {
         let mut instances: HashMap<(&str, &AssigKind, usize), usize> = HashMap::new();
 
+
         for x in self.as_iter() {
             if let Some(k) = &x.kind {
                 *instances.entry((x.nom, k, x.grup / 10)).or_insert(0) += 1;
@@ -105,13 +106,46 @@ impl<'a> Horari<'a> {
 // LA FUNCIÓ IMPORTANT
 impl<'a> Ord for Horari<'a> {
     fn cmp(&self, other: &Self) -> Ordering {
+        //let eda = |h: &Self | h.0.iter()
+        //    .filter(|d| {
+        //        d.0.iter().all(|a| a.is_none() || a.as_ref().is_some_and(|ass| ass.nom.to_ascii_uppercase() == "EDA" && ass.kind == Some(AssigKind::Lab)))
+        //    })
+        //    .count();
+        //eda(self).cmp(&eda(other))
+        //    .then(self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard()))
+        //    .then(self.grups_same_teoria_lab().cmp(&other.grups_same_teoria_lab()))
+        //    .then(self.num_classes_angles().cmp(&other.num_classes_angles()).reverse())
+
         self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard())
-            .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
             .then(self.grups_same_teoria_lab().cmp(&other.grups_same_teoria_lab()))
+            .then(self.te_dia_lliure().cmp(&other.te_dia_lliure()))
             .then(self.num_classes_angles().cmp(&other.num_classes_angles()).reverse())
+
+        //let free_dim = |h: &Self| h.0[2].0.iter().all(|a| a.is_none());
+        //free_dim(self).cmp(&free_dim(other))
+        //    .then(self.quants_dies_comença_tard().cmp(&other.quants_dies_comença_tard()).reverse())
+        //    .then(self.num_classes_angles().cmp(&other.num_classes_angles()).reverse())
     }
 }
 
+impl PartialEq for Horari<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.iter().zip(other.0.iter())
+            .all(|(d1, d2)| d1 == d2)
+    }
+}
+
+impl<'a> Eq for Horari<'a> {}
+
+impl PartialEq for Day<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.iter().zip(other.0.iter())
+            .all(|(h1, h2)| {
+                (h1.is_none() && h2.is_none())
+                    || (h1.is_some() && h2.is_some())
+            })
+    }
+}
 
 impl Display for AssigKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -207,19 +241,25 @@ impl<'a> Display for Horari<'a> {
             out.push('\n');
         }
 
-        write!(f, "{out}")
+        let mut tldr: Vec<(&str, usize)> = self.0.iter()
+            .flat_map(|d| &d.0)
+            .flatten()
+            .map(|h| (h.nom, h.grup))
+            .filter(|(_, g)| g % 10 != 0)
+            .collect();
+
+        tldr.sort();
+        tldr.dedup();
+
+        let tldr_s: String = tldr.into_iter().map(|(n, g)| format!("{n}: [{g}]; ")).collect();
+
+        write!(f, "{out}{tldr_s}\n")
     }
 }
 
 impl<'a> PartialOrd for Horari<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
 }
-impl<'a> Eq for Horari<'a>  {}
-impl<'a> PartialEq for Horari<'a> {
-    fn eq(&self, other: &Self) -> bool { self.cmp(other) == Ordering::Equal }
-}
-
-
 
 impl<'a> TryFrom<ProtoHorari<'a>> for Horari<'a> {
     type Error = ();

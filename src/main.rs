@@ -49,22 +49,25 @@ fn main() {
     let sort_time = sort_start.elapsed();
     println!("Sorting done in {}s", sort_time.as_secs_f32());
 
+    println!("Deduping...");
+    let dedup_start = Instant::now();
+    //hs.dedup();
+    let dedup_time = dedup_start.elapsed();
+    println!("Deduping done in {}s", dedup_time.as_secs_f32());
 
 
-    let quants = 3;
+    let quants = 2;
 
     println!("Els millors, en teoria, son:");
     for h in hs.iter().take(quants) { println!("{h}") }
-
-    println!("I els pitjors, en teoria, son:");
-    for h in hs.iter().rev().take(quants) { println!("{h}") }
 
 
     println!("Times taken:");
     println!("\t{}s: getting all permutations", perms_time.as_secs_f32());
     println!("\t{}s: filtering out invalid ones", filter_time.as_secs_f32());
     println!("\t{}s: sorting from best to worse", sort_time.as_secs_f32());
-    println!("\nTotal time is: {}", (perms_time + filter_time + sort_time).as_secs_f32());
+    println!("\t{}s: deduping", dedup_time.as_secs_f32());
+    println!("\nTotal time is: {}", (perms_time + filter_time + sort_time + dedup_time).as_secs_f32());
     
 }
 
